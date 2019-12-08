@@ -44,6 +44,7 @@ public class Rover extends Thread {
     private static byte[] totalNumberOfFragments;
     private static byte[] fragmentNumberBeingSent;
     private static String destinationIpAddress;
+    private static String fileName;
     int count; // Number of fragments that have been sent successfully to the receiver
 
     //for receiving the file (Rover)
@@ -628,14 +629,52 @@ public class Rover extends Thread {
         }
     }
 
+    public static void setVariablesAndStartThreads(String[] args, Rover r){
+        try{
+            if(args[2].charAt(1) == 's'){
+                System.out.println("Sender");
+                fileName = args[3];
+                destinationIpAddress = args[4]; // Destination IP Address where the file is to be sent
+
+                Thread baseStationSendThread = new Thread(() -> {
+                    try {
+                        r.sendBytesToRover(fileName, destinationIpAddress);
+
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                });
+                baseStationSendThread.start();
+
+                Thread baseStationAckThread = new Thread(() -> {
+                    try {
+                        r.listenForAcknowledgements();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                });
+
+                baseStationAckThread.start();
+
+            } else if(args[2].charAt(1)=='r') {
+                System.out.println("Receiver");
+                fileToCreate = args[3];
+
+                Thread receiveFileThread = new Thread(() ->  {
+                    try {
+                        receiveFile();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                });
+                receiveFileThread.start();
+
+            }
+        } catch (Exception e){
+            System.out.println("Intermediate Rover");
+        }
 
 
-
-    public static void main(String args[]) {
-        int roverId = Integer.parseInt(args[0]);
-        ripPort = Integer.parseInt(args[1]);
-        System.out.println("Router id:" + roverId);
-        Rover r = new Rover(roverId);
         Thread receiveThread = new Thread(new Runnable() {
             @Override
             public void run() {
@@ -649,6 +688,16 @@ public class Rover extends Thread {
         receiveThread.start();
         r.send();
 
+    }
+
+
+    public static void main(String args[]) throws SocketException {
+        int roverId = Integer.parseInt(args[0]); // Rover ID
+        System.out.println("Rover id:" + roverId);
+        Rover r = new Rover(roverId);
+        ripPort = Integer.parseInt(args[1]); // RIP Port
+        socket = new DatagramSocket();
+        setVariablesAndStartThreads(args, r);
     }
 
 

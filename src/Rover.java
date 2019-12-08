@@ -47,6 +47,8 @@ public class Rover extends Thread {
     private static String fileName;
     int count; // Number of fragments that have been sent successfully to the receiver
 
+    private static Timer sendTimer;
+
     //for receiving the file (Rover)
     static ArrayList<byte[]> packets = new ArrayList<>();
     public static Set<Integer> packetsAdded = new HashSet<>();
@@ -629,6 +631,40 @@ public class Rover extends Thread {
         }
     }
 
+    public static void checkEntryAndSend(Rover r){
+        //if present then start the send thread
+        System.out.println("In checkEntryAndSend function");
+        for(int i=0; i<r.routerTable.size();i++){
+            RouterTableEntry entry = r.routerTable.get(i);
+
+            if(entry.ipAddress.equals(destinationIpAddress)){
+                Thread baseStationSendThread = new Thread(() -> {
+                    try {
+                        sendTimer.cancel();
+                        System.out.println("************Match Found************");
+                        System.out.println("IP Address:"+entry.ipAddress+" Dest:"+destinationIpAddress);
+                        r.sendBytesToRover(fileName, entry.nextHop);
+                        //check my routing table to see if there's an entry
+                        //cancel the timer
+
+
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                });
+                baseStationSendThread.start();
+            }
+        }
+
+    }
+
+    public static void forwardBytes(Rover r){
+        System.out.println("Rover "+r.roverId+" Initialized to forward..");
+        while(true){
+            //code to keep listening and forwarding
+        }
+    }
+
     public static void setVariablesAndStartThreads(String[] args, Rover r){
         try{
             if(args[2].charAt(1) == 's'){
@@ -636,15 +672,15 @@ public class Rover extends Thread {
                 fileName = args[3];
                 destinationIpAddress = args[4]; // Destination IP Address where the file is to be sent
 
-                Thread baseStationSendThread = new Thread(() -> {
-                    try {
-                        r.sendBytesToRover(fileName, destinationIpAddress);
-
-                    } catch (IOException e) {
-                        e.printStackTrace();
+                sendTimer = new Timer();
+                sendTimer.schedule(new TimerTask() {
+                    @Override
+                    public void run() {
+                        
+                        checkEntryAndSend(r);
                     }
-                });
-                baseStationSendThread.start();
+                }, 2000, 2000);
+
 
                 Thread baseStationAckThread = new Thread(() -> {
                     try {
@@ -674,7 +710,16 @@ public class Rover extends Thread {
             System.out.println("Intermediate Rover");
         }
 
+        Thread forwardThread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                r.forwardBytes(r);
+            }
+        });
 
+        forwardThread.start();
+
+        // thread for receiving RIP Packets
         Thread receiveThread = new Thread(new Runnable() {
             @Override
             public void run() {

@@ -92,19 +92,19 @@ public class Rover extends Thread {
         }, 2000, 5000);
     }
 
-    public static String getPrivateIP(int roverId){
-        String privateIp = "10.0.0."+roverId;
+    public static String getPrivateIP(int roverId) {
+        String privateIp = "10.0.0." + roverId;
         return privateIp;
     }
 
-    public String getPublicIP(){
+    public String getPublicIP() {
         InetAddress localhost = null;
         try {
             localhost = InetAddress.getLocalHost();
         } catch (UnknownHostException e) {
             e.printStackTrace();
         }
-        String publicIp  = localhost.getHostAddress().trim();
+        String publicIp = localhost.getHostAddress().trim();
         return publicIp;
     }
 
@@ -182,7 +182,6 @@ public class Rover extends Thread {
                     markRoversAsUnreachable(ipAddr, privateIp);
                 }
             }, 10000);
-
 
 
         }
@@ -278,7 +277,7 @@ public class Rover extends Thread {
                 }
                 // compute new cost
                 int newCost = (int) senderEntry.metric[3] + 1;
-                if (newCost < (int)myEntry.metric[3]) {
+                if (newCost < (int) myEntry.metric[3]) {
                     // new cost is lesser than existing cost
                     System.out.println("Updating");
                     myEntry.metric[3] = (byte) newCost;
@@ -292,11 +291,11 @@ public class Rover extends Thread {
 
                 }
 
-            } else  {
+            } else {
                 // entry is not present in the receiver's routing table and
                 // enrty's ip is not the receiver's ip address
 
-                if(senderEntry.equals(entryPresentInRT(senderEntry))){
+                if (senderEntry.equals(entryPresentInRT(senderEntry))) {
                     senderEntry.metric[3] = (byte) ((int) senderEntry.metric[3] + 1);
                     change = true;
                     senderEntry.nextHop = senderIp;
@@ -307,7 +306,7 @@ public class Rover extends Thread {
                     change = true;
                 }
 
-                if(!senderEntry.ipAddress.equals(getPrivateIP(roverId))){
+                if (!senderEntry.ipAddress.equals(getPrivateIP(roverId))) {
                     routerTable.add(senderEntry);
                     change = true;
                 }
@@ -323,8 +322,8 @@ public class Rover extends Thread {
      * This function prints the entries that are in the routing table.
      */
 
-    public void printRoutingTable(){
-        if(change){
+    public void printRoutingTable() {
+        if (change) {
             System.out.println("\nThis is Rover " + roverId + "'s routing table:");
             System.out.println("\n=========================================================================");
             System.out.println("\t IP Address \t\tNext Hop\t\tMetric");
@@ -335,7 +334,7 @@ public class Rover extends Thread {
                 String ipAddress = entry.ipAddress;
                 String nextHop = entry.nextHop;
                 int metric = (int) entry.metric[3];
-                System.out.println("\t" + ipAddress + "/24" +  "\t\t" + nextHop + "\t\t" + metric);
+                System.out.println("\t" + ipAddress + "/24" + "\t\t" + nextHop + "\t\t" + metric);
             }
         }
         change = false;
@@ -379,7 +378,7 @@ public class Rover extends Thread {
      */
 
     private static byte[] readBytesFromFile(int numberOfBytesToRead) throws IOException {
-        if (numberOfBytesToRead > (fin.available())){
+        if (numberOfBytesToRead > (fin.available())) {
             numberOfBytesToRead = fin.available();
         }
         byte[] bytes = new byte[numberOfBytesToRead];
@@ -397,9 +396,9 @@ public class Rover extends Thread {
      * The resendBytesFromFile will resend the bytes for which an acknowledgement has not been received. It will not read
      * new bytes from the file but rather send the previous bytes that were read.
      *
-     * @param bytesToSend bytes for which an ack was not received
+     * @param bytesToSend    bytes for which an ack was not received
      * @param fragmentNumber fragment number which is being sent
-     * @param numFragments total number of fragments
+     * @param numFragments   total number of fragments
      * @throws IOException
      */
 
@@ -409,7 +408,7 @@ public class Rover extends Thread {
 
             System.out.println("Retransmission of Bytes..");
 
-            //source IP Address
+            //My IP Address
             String sourceAddress = getPrivateIP(roverId);
             InetAddress sourceInetAddress = InetAddress.getByName(sourceAddress);
             byte[] sourceIpBytes = sourceInetAddress.getAddress();
@@ -419,24 +418,15 @@ public class Rover extends Thread {
             byte[] destIpBytes = destInetAddress.getAddress();
 
             InetAddress ip = InetAddress.getByName(ipAddress);
-            CustomPacket customPacket = new CustomPacket(sourceIpBytes, destIpBytes, numFragments,fragmentNumber, bytesToSend);
+            CustomPacket customPacket = new CustomPacket(sourceIpBytes, destIpBytes, numFragments, fragmentNumber, bytesToSend);
             customPacket.setAck(0);
             byte[] customPacketBytes = customPacket.getBytes();
-            System.out.println("%LOG: RT Sending the packet to "+ip);
-            for(int i=0; i<routerTable.size(); i++){
-                RouterTableEntry entry = routerTable.get(i);
-                System.out.println("%LOG: RT Comparison");
-                System.out.println(entry.nextHop);
-                System.out.println(ipAddress);
-                if(entry.nextHop.equals(ipAddress)){
-                    System.out.println("Match Found!");
-                    DatagramPacket packet = new DatagramPacket(customPacketBytes, customPacketBytes.length, InetAddress.getByName(entry.nextHop), 4234);
-                    socket.send(packet);
-                    ByteBuffer fragmentNumberBuffer = ByteBuffer.wrap(fragmentNumber);
-                    fragmentNumberBuffer.order(ByteOrder.BIG_ENDIAN);
-                    mostRecentlySentPacket = fragmentNumberBuffer.getInt();
-                }
-            }
+
+            DatagramPacket packet = new DatagramPacket(customPacketBytes, customPacketBytes.length, InetAddress.getByName(ipAddress), 4234);
+            socket.send(packet);
+            ByteBuffer fragmentNumberBuffer = ByteBuffer.wrap(fragmentNumber);
+            fragmentNumberBuffer.order(ByteOrder.BIG_ENDIAN);
+            mostRecentlySentPacket = fragmentNumberBuffer.getInt();
 
         }
     }
@@ -460,15 +450,8 @@ public class Rover extends Thread {
         // Fixed size of one fragment
         int oneFragmentSize = 5000;
         numFragments = (int) Math.ceil(fileSize / oneFragmentSize) + 1; // Number of fragments required to send the file
-        System.out.println("Sending "+numFragments+" Fragments...");
+        System.out.println("Sending " + numFragments + " Fragments...");
 
-        InetAddress ip = InetAddress.getByName(ipAddress);
-        for (int i=0; i<routerTable.size();i++){
-            RouterTableEntry entry = routerTable.get(i);
-            if(entry.ipAddress.equals(ipAddress)){
-                ip = InetAddress.getByName(entry.nextHop);
-            }
-        }
 
         //source IP Address
         String sourceAddress = getPrivateIP(roverId);
@@ -479,52 +462,46 @@ public class Rover extends Thread {
         InetAddress destInetAddress = InetAddress.getByName(destinationIpAddress);
         byte[] destIpBytes = destInetAddress.getAddress();
 
-        for(int i=0; i<routerTable.size(); i++){
-            RouterTableEntry entry = routerTable.get(i);
-            if(entry.ipAddress.equals(destinationIpAddress)){
-                while (count < numFragments) {
-                    if (mostRecentlySentPacket == ackdPacket) {
-                        bytesToSend = readBytesFromFile(oneFragmentSize);
-                        fragmentNumber++;
-                        mostRecentlySentPacket = fragmentNumber;
-                        totalNumberOfFragments = ByteBuffer.allocate(4).putInt(numFragments).array();
-                        fragmentNumberBeingSent = ByteBuffer.allocate(4).putInt(fragmentNumber).array();
+
+        while (count < numFragments) {
+            if (mostRecentlySentPacket == ackdPacket) {
+                bytesToSend = readBytesFromFile(oneFragmentSize);
+                fragmentNumber++;
+                mostRecentlySentPacket = fragmentNumber;
+                totalNumberOfFragments = ByteBuffer.allocate(4).putInt(numFragments).array();
+                fragmentNumberBeingSent = ByteBuffer.allocate(4).putInt(fragmentNumber).array();
 
 
-                        CustomPacket customPacket = new CustomPacket(sourceIpBytes, destIpBytes, totalNumberOfFragments, fragmentNumberBeingSent, bytesToSend);
-                        customPacket.setAck(0);
-                        byte[] customPacketBytes = customPacket.getBytes();
-                        DatagramPacket packet = new DatagramPacket(customPacketBytes, customPacketBytes.length, ip, 4234);
-                        fragmentAcknowledgement.put(fragmentNumber, 0);
-                        Timer timer = new Timer();
-                        timer.schedule(new TimerTask() {
-                            @Override
-                            public void run() {
-                                try {
-                                    resendBytesFromFile(bytesToSend, fragmentNumberBeingSent, totalNumberOfFragments, entry.nextHop);
-                                } catch (IOException e) {
-                                    e.printStackTrace();
-                                }
-                            }
-                        }, 7000);
-                        retransmissionTimer.put(fragmentNumber, timer);
-                        System.out.println("Sending Fragment #"+fragmentNumber);
-                        socket.send(packet);
-                        count++;
+                CustomPacket customPacket = new CustomPacket(sourceIpBytes, destIpBytes, totalNumberOfFragments, fragmentNumberBeingSent, bytesToSend);
+                customPacket.setAck(0);
+                byte[] customPacketBytes = customPacket.getBytes();
+                DatagramPacket packet = new DatagramPacket(customPacketBytes, customPacketBytes.length, InetAddress.getByName(ipAddress), 4234);
+                fragmentAcknowledgement.put(fragmentNumber, 0);
+                Timer timer = new Timer();
+                timer.schedule(new TimerTask() {
+                    @Override
+                    public void run() {
+                        try {
+                            resendBytesFromFile(bytesToSend, fragmentNumberBeingSent, totalNumberOfFragments, ipAddress);
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
                     }
-                }
-
-                byte[] finPayload = new byte[1];
-                finPayload[0] = (byte)0;
-                CustomPacket finPacket = new CustomPacket(sourceIpBytes, destIpBytes, totalNumberOfFragments, fragmentNumberBeingSent, finPayload);
-                finPacket.setFin(1);
-                byte[] finPacketBytes = finPacket.getBytes();
-                DatagramPacket finDatagram = new DatagramPacket(finPacketBytes, finPacketBytes.length, ip, 4234);
-                socket.send(finDatagram);
-
+                }, 7000);
+                retransmissionTimer.put(fragmentNumber, timer);
+                System.out.println("Sending Fragment #" + fragmentNumber);
+                socket.send(packet);
+                count++;
             }
         }
 
+        byte[] finPayload = new byte[1];
+        finPayload[0] = (byte) 0;
+        CustomPacket finPacket = new CustomPacket(sourceIpBytes, destIpBytes, totalNumberOfFragments, fragmentNumberBeingSent, finPayload);
+        finPacket.setFin(1);
+        byte[] finPacketBytes = finPacket.getBytes();
+        DatagramPacket finDatagram = new DatagramPacket(finPacketBytes, finPacketBytes.length, InetAddress.getByName(ipAddress), 4234);
+        socket.send(finDatagram);
 
 
     }
@@ -539,7 +516,6 @@ public class Rover extends Thread {
      */
 
 
-
     public void listenForAcknowledgements() throws IOException {
 
         receiveSocket = new DatagramSocket(8432); // socket on which the acknowledgements will be received
@@ -551,7 +527,7 @@ public class Rover extends Thread {
             // Decoding received packet
             CustomPacket pkt = new CustomPacket(receive, receivedAckPacket.getLength());
             // check if pkt dest is my private IP, if not then forward
-            if(InetAddress.getByAddress(pkt.destinationIpAddress).getHostAddress().equals(getPrivateIP(roverId))) {
+            if (InetAddress.getByAddress(pkt.destinationIpAddress).getHostAddress().equals(getPrivateIP(roverId))) {
                 ByteBuffer fragmentNumberByteBuffer = ByteBuffer.wrap(pkt.fragmentNumber);
                 fragmentNumberByteBuffer.order(ByteOrder.BIG_ENDIAN);
                 ackdPacket = fragmentNumberByteBuffer.getInt();
@@ -564,7 +540,7 @@ public class Rover extends Thread {
                     retransmissionTimer.remove(ackdPacket);
                 }
 
-                if((pkt.flags==3)){
+                if ((pkt.flags == 3)) {
                     System.out.println("Received The FIN ACK");
                     System.out.println("Closing socket");
                     socket.close();
@@ -573,9 +549,9 @@ public class Rover extends Thread {
             } else {
                 //encapsulate packet in a UDP packet and send
                 System.out.println("Forwarding ACK Packet..");
-                for(int i=0; i<routerTable.size();i++){
+                for (int i = 0; i < routerTable.size(); i++) {
                     RouterTableEntry enrty = routerTable.get(i);
-                    if(enrty.ipAddress.equals(InetAddress.getByAddress(pkt.destinationIpAddress))){
+                    if (enrty.ipAddress.equals(InetAddress.getByAddress(pkt.destinationIpAddress))) {
                         InetAddress forwardAddress = InetAddress.getByName(enrty.nextHop);
                         receivedAckPacket.setAddress(forwardAddress);
                         socket.send(receivedAckPacket);
@@ -605,7 +581,6 @@ public class Rover extends Thread {
     }
 
 
-
     /**
      * The receiveFile function listens for incoming packets and adds the dataPayload of the receiveFiled packets to an
      * ArrayList of packets. When all the fragments have been receiveFiled, it writes the packets from the
@@ -632,15 +607,16 @@ public class Rover extends Thread {
             DatagramPacket packet = new DatagramPacket(receiveFile, receiveFile.length);
             socket.receive(packet);
             ip = InetAddress.getByName(packet.getAddress().getHostAddress());
-            System.out.println("Packet receiveFiled from : "+packet.getAddress().getHostAddress());
+            System.out.println("Packet receiveFiled from : " + packet.getAddress().getHostAddress());
 
             CustomPacket pkt = new CustomPacket(receiveFile, packet.getLength());
             totalFragmentsBuffer = ByteBuffer.wrap(pkt.totalFragments);
-            totalFragmentsBuffer.order(ByteOrder.BIG_ENDIAN);;
+            totalFragmentsBuffer.order(ByteOrder.BIG_ENDIAN);
+            ;
             //Check if the packet is meant for me. If not, then forward.
-            if(InetAddress.getByAddress(pkt.destinationIpAddress).getHostAddress().equals(getPrivateIP(roverId))){
+            if (InetAddress.getByAddress(pkt.destinationIpAddress).getHostAddress().equals(getPrivateIP(roverId))) {
 
-                if((pkt.flags>>1|0)==1){
+                if ((pkt.flags >> 1 | 0) == 1) {
                     System.out.println("FIN Packet");
                     System.out.println("Sender Done Sending");
                     //send a finAck packet
@@ -666,7 +642,6 @@ public class Rover extends Thread {
                 }
 
 
-
                 // Send Acknowledgement
                 byte[] ackPayload = new byte[1];
                 ackPayload[0] = (byte) 0;
@@ -683,19 +658,19 @@ public class Rover extends Thread {
 
                 ByteBuffer fragmentNumberBuffer = ByteBuffer.wrap(pkt.fragmentNumber);
                 fragmentNumberBuffer.order(ByteOrder.BIG_ENDIAN);
-                System.out.println("Sent ACK "+ackCustomPacket.flags+" for Packet Fragment #"+fragmentNumberBuffer.getInt());
+                System.out.println("Sent ACK " + ackCustomPacket.flags + " for Packet Fragment #" + fragmentNumberBuffer.getInt());
 
             } else {
                 //encapsulate packet in a UDP packet and sends
                 System.out.println("Forwarding Packet ...");
-               for(int i=0; i<routerTable.size();i++){
-                   RouterTableEntry enrty = routerTable.get(i);
-                   if(enrty.ipAddress.equals(InetAddress.getByAddress(pkt.destinationIpAddress))){
-                       InetAddress forwardAddress = InetAddress.getByName(enrty.nextHop);
-                       packet.setAddress(forwardAddress);
-                       socket.send(packet);
-                   }
-               }
+                for (int i = 0; i < routerTable.size(); i++) {
+                    RouterTableEntry enrty = routerTable.get(i);
+                    if (enrty.ipAddress.equals(InetAddress.getByAddress(pkt.destinationIpAddress))) {
+                        InetAddress forwardAddress = InetAddress.getByName(enrty.nextHop);
+                        packet.setAddress(forwardAddress);
+                        socket.send(packet);
+                    }
+                }
 
 
             }
@@ -709,12 +684,12 @@ public class Rover extends Thread {
         }
     }
 
-    public static void checkEntryAndSend(Rover r){
+    public static void checkEntryAndSend(Rover r) {
         //if present then start the send thread
-        for(int i=0; i<r.routerTable.size();i++){
+        for (int i = 0; i < r.routerTable.size(); i++) {
             RouterTableEntry entry = r.routerTable.get(i);
 
-            if(entry.ipAddress.equals(destinationIpAddress)){
+            if (entry.ipAddress.equals(destinationIpAddress)) {
                 Thread baseStationSendThread = new Thread(() -> {
                     try {
                         sendTimer.cancel();
@@ -734,17 +709,16 @@ public class Rover extends Thread {
     }
 
     public static void forwardBytes(Rover r) throws IOException {
-        System.out.println("Rover "+r.roverId+" Initialized to forward..");
-        while(true){
-
+        System.out.println("Rover " + r.roverId + " Initialized to forward..");
+        while (true) {
 
 
         }
     }
 
-    public static void setVariablesAndStartThreads(String[] args, Rover r){
-        try{
-            if(args[2].charAt(1) == 's'){
+    public static void setVariablesAndStartThreads(String[] args, Rover r) {
+        try {
+            if (args[2].charAt(1) == 's') {
                 System.out.println("Sender");
                 fileName = args[3];
                 destinationIpAddress = args[4]; // Destination IP Address where the file is to be sent
@@ -769,11 +743,11 @@ public class Rover extends Thread {
 
                 baseStationAckThread.start();
 
-            } else if(args[2].charAt(1)=='r') {
+            } else if (args[2].charAt(1) == 'r') {
                 System.out.println("Receiver");
                 fileToCreate = args[3];
 
-                Thread receiveFileThread = new Thread(() ->  {
+                Thread receiveFileThread = new Thread(() -> {
                     try {
                         r.receiveFile();
                     } catch (IOException e) {
@@ -783,7 +757,7 @@ public class Rover extends Thread {
                 receiveFileThread.start();
 
             }
-        } catch (Exception e){
+        } catch (Exception e) {
             System.out.println("Intermediate Rover");
         }
 

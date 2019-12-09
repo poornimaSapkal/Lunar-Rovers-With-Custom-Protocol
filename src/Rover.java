@@ -194,7 +194,7 @@ public class Rover extends Thread {
      * @param rp RipPacket that the rover has received.
      */
 
-    private void addFirstEntryToRoutingTable(RipPacket rp, String senderIp) {
+    private void addFirstEntryToRoutingTable(RipPacket rp, String senderIp) throws UnknownHostException {
         boolean contains = false;
         // String incomingIpAddress = "172.18." + rp.id + ".1";
         String incomingIpAddress = getPrivateIP(rp.id);
@@ -214,8 +214,8 @@ public class Rover extends Thread {
         if (!contains) {
             change = true;
             byte[] addressFamilyIdentifier = new byte[2]; // 2 bytes
-            //addressFamilyIdentifier[0] = (byte) 0;
-            //addressFamilyIdentifier[1] = (byte) 0;
+//            addressFamilyIdentifier[0] = (byte) 0;
+            addressFamilyIdentifier[1] = (byte) 2;
 
             byte[] routeTag = new byte[2]; // 2 bytes
             routeTag[0] = (byte) 3;
@@ -224,10 +224,10 @@ public class Rover extends Thread {
             String ipAddress = "172.18." + rp.id + ".1";
 
             byte[] subnetMask = new byte[4]; // 4 bytes
-            subnetMask[0] = (byte) 0;
-            subnetMask[1] = (byte) 0;
-            subnetMask[2] = (byte) 0;
-            subnetMask[3] = (byte) 0;
+            String mask = "255.255.255.0";
+            InetAddress maskAddress = InetAddress.getByName(mask);
+            subnetMask = maskAddress.getAddress();
+
 
             String nextHop = "172.18." + rp.id + ".1";
 

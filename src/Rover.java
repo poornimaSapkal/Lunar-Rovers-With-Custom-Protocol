@@ -273,7 +273,6 @@ public class Rover extends Thread {
 
                 if (myEntry.nextHop.equals(senderIp)) {
                     myEntry.metric[3] = (byte) ((int) senderEntry.metric[3] + 1);
-                    change = true;
                 }
                 // compute new cost
                 int newCost = (int) senderEntry.metric[3] + 1;

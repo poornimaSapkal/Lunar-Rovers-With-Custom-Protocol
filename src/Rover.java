@@ -627,6 +627,19 @@ public class Rover extends Thread {
                     System.out.println("Sending FIN ACK to sender");
 
                     byte[] finAckCustomPacketBytes = finAckPacket.getBytes();
+                    for(int i=0; i<routerTable.size(); i++){
+                        RouterTableEntry entry = routerTable.get(i);
+                        InetAddress sourcePacketAddress = InetAddress.getByAddress(pkt.sourceIpAddress);
+                        System.out.println("%LOG ACK:Comparing entry IP address and source IP of packet");
+                        System.out.println("%LOG ACK:Entry:"+entry.ipAddress);
+                        System.out.println("%LOG ACK:Packet Source:"+sourcePacketAddress.getHostAddress());
+
+
+                        if(entry.ipAddress.equals(sourcePacketAddress.getHostAddress())){
+                            System.out.println("%LOG ACK:Match Found");
+                            ip = InetAddress.getByName(entry.nextHop);
+                        }
+                    }
                     DatagramPacket ackPacket = new DatagramPacket(finAckCustomPacketBytes, finAckCustomPacketBytes.length, ip, 8432);
                     sendSocket.send(ackPacket);
 
@@ -650,7 +663,19 @@ public class Rover extends Thread {
                 //convert the packet source IP bytes to String
 
                 // here check the next hop and set that ip as the datagram packet destination
+                for(int i=0; i<routerTable.size(); i++){
+                    RouterTableEntry entry = routerTable.get(i);
+                    InetAddress sourcePacketAddress = InetAddress.getByAddress(pkt.sourceIpAddress);
+                    System.out.println("%LOG ACK:Comparing entry IP address and source IP of packet");
+                    System.out.println("%LOG ACK:Entry:"+entry.ipAddress);
+                    System.out.println("%LOG ACK:Packet Source:"+sourcePacketAddress.getHostAddress());
 
+
+                    if(entry.ipAddress.equals(sourcePacketAddress.getHostAddress())){
+                        System.out.println("%LOG ACK:Match Found");
+                        ip = InetAddress.getByName(entry.nextHop);
+                    }
+                }
 
                 byte[] ackCustomPacketBytes = ackCustomPacket.getBytes();
                 DatagramPacket ackPacket = new DatagramPacket(ackCustomPacketBytes, ackCustomPacketBytes.length, ip, 8432);

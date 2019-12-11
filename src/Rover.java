@@ -501,7 +501,7 @@ public class Rover extends Thread {
                                     e.printStackTrace();
                                 }
                             }
-                        }, 10000, 10000);
+                        }, 1000, 1000);
                         retransmissionTimer.put(fragmentNumber, timer);
                         System.out.println("Sending Fragment #" + fragmentNumber);
                         socket.send(packet);
@@ -512,8 +512,6 @@ public class Rover extends Thread {
                 finPayload[0] = (byte) 0;
                 CustomPacket finPacket = new CustomPacket(sourceIpBytes, destIpBytes, totalNumberOfFragments, fragmentNumberBeingSent, finPayload);
                 finPacket.setFin(1);
-                System.out.println("Setting fin!");
-                System.out.println("finPacket.flags"+finPacket.flags);
                 byte[] finPacketBytes = finPacket.getBytes();
                 System.out.println("Received ACK for all fragments..");
                 System.out.println("Sending FIN packet");
@@ -574,8 +572,7 @@ public class Rover extends Thread {
 //                    break;
 //                }
             } else {
-                System.out.println("Forwarding ACK to .. "+receivedAckPacket.getAddress().getHostAddress());
-                System.out.println("Packet destination address .. "+InetAddress.getByAddress(pkt.destinationIpAddress).getHostAddress());
+                System.out.println("Forwarding ACK To : "+InetAddress.getByAddress(pkt.destinationIpAddress).getHostAddress());
                 //encapsulate packet in a UDP packet and send
                 for (int i = 0; i < routerTable.size(); i++) {
                     RouterTableEntry enrty = routerTable.get(i);
@@ -631,13 +628,12 @@ public class Rover extends Thread {
         ByteBuffer totalFragmentsBuffer;
 
         while (true) {
-            System.out.println("In while true");
             // receiveFile
             byte[] receiveFile = new byte[6000];
             DatagramPacket packet = new DatagramPacket(receiveFile, receiveFile.length);
             socket.receive(packet);
             ip = InetAddress.getByName(packet.getAddress().getHostAddress());
-            System.out.println("Packet received from : " + packet.getAddress().getHostAddress());
+            System.out.println("\nPacket received from : " + packet.getAddress().getHostAddress());
 
             CustomPacket pkt = new CustomPacket(receiveFile, packet.getLength());
             totalFragmentsBuffer = ByteBuffer.wrap(pkt.totalFragments);
@@ -645,11 +641,9 @@ public class Rover extends Thread {
             ;
             //Check if the packet is meant for me. If not, then forward.
             if (InetAddress.getByAddress(pkt.destinationIpAddress).getHostAddress().equals(getPrivateIP(roverId))) {
-                System.out.println("****===PACKET IS MEANT FOR ME===****");
-                System.out.println((pkt.flags >> 1 | 0) == 1);
-                System.out.println("pkt.flgs :"+pkt.flags);
+                System.out.println("\n*******PACKET IS MEANT FOR ME*******\n");
                 if ((pkt.flags >> 1 | 0) == 1) {
-                    System.out.println("Received FIN Packet");
+                    System.out.println("FIN Packet Received");
                     System.out.println("Sender Done Sending");
                     //write the file here
                     System.out.println("WRITING BYTES TO THE FILE");
@@ -713,17 +707,17 @@ public class Rover extends Thread {
 
                 ByteBuffer fragmentNumberBuffer = ByteBuffer.wrap(pkt.fragmentNumber);
                 fragmentNumberBuffer.order(ByteOrder.BIG_ENDIAN);
-                System.out.println("Sent ACK " + ackCustomPacket.flags + " for Packet Fragment #" + fragmentNumberBuffer.getInt() + " to address "+ackPacket.getAddress().getHostAddress()+" and port "+ackPacket.getPort());
+                System.out.println("Sent ACK " + ackCustomPacket.flags + " for Packet Fragment #" + fragmentNumberBuffer.getInt() + " to address "+ackPacket.getAddress().getHostAddress());
 
             } else {
                 //encapsulate packet in a UDP packet and sends
-                System.out.print("Forwarding Packet ...");
+                System.out.println("\n===Packet is not meant for me===\n");
                 for (int i = 0; i < routerTable.size(); i++) {
                     RouterTableEntry enrty = routerTable.get(i);
                     if (enrty.ipAddress.equals(InetAddress.getByAddress(pkt.destinationIpAddress).getHostName())) {
                         InetAddress forwardAddress = InetAddress.getByName(enrty.nextHop);
                         packet.setPort(4234);
-                        System.out.println("..to this address"+forwardAddress.getHostAddress()+" on port#"+packet.getPort());
+                        System.out.println("Forwarding File Packet To :"+forwardAddress.getHostAddress());
                         packet.setAddress(InetAddress.getByName(forwardAddress.getHostAddress()));
                         socket.send(packet);
                     }

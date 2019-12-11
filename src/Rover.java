@@ -501,7 +501,7 @@ public class Rover extends Thread {
                                     e.printStackTrace();
                                 }
                             }
-                        }, 1000, 1000);
+                        }, 3000, 3000);
                         retransmissionTimer.put(fragmentNumber, timer);
                         System.out.println("Sending Fragment #" + fragmentNumber);
                         socket.send(packet);
@@ -562,15 +562,6 @@ public class Rover extends Thread {
                     retransmissionTimer.remove(ackdPacket);
                 }
 
-//                if ((pkt.flags == 3) && InetAddress.getByAddress(pkt.destinationIpAddress).getHostAddress().equals(getPrivateIP(roverId))) {
-//                    System.out.println("Packet source address:"+pkt.sourceIpAddress);
-//                    System.out.println("Destination IP address:"+pkt.destinationIpAddress);
-//                    System.out.println("Private IP Address:"+getPrivateIP(roverId));
-//                    System.out.println("Received The FIN ACK");
-//                    System.out.println("Closing socket");
-//                    socket.close();
-//                    break;
-//                }
             } else {
                 System.out.println("Forwarding ACK To : "+InetAddress.getByAddress(pkt.destinationIpAddress).getHostAddress());
                 //encapsulate packet in a UDP packet and send
@@ -591,7 +582,6 @@ public class Rover extends Thread {
 
     }
 
-    // For receiving the file (Rover)
 
     /**
      * The writeBytesToFile function writes the packets that it receiveFiled which are present in the packets array list to
@@ -648,29 +638,6 @@ public class Rover extends Thread {
                     //write the file here
                     System.out.println("WRITING BYTES TO THE FILE");
                     writeBytesToFile();
-
-//                    //send a finAck packet
-//                    byte[] finAckPayload = new byte[1];
-//                    CustomPacket finAckPacket = new CustomPacket(pkt.sourceIpAddress, pkt.destinationIpAddress, pkt.totalFragments, pkt.fragmentNumber, finAckPayload);
-//                    finAckPacket.setAck(1);
-//                    finAckPacket.setFin(1);
-//
-//
-//                    System.out.println("Sending FIN ACK to sender");
-//
-//
-//                    byte[] finAckCustomPacketBytes = finAckPacket.getBytes();
-//                    for (int i = 0; i < routerTable.size(); i++) {
-//                        RouterTableEntry entry = routerTable.get(i);
-//                        InetAddress sourcePacketAddress = InetAddress.getByAddress(pkt.sourceIpAddress);
-//
-//
-//                        if (entry.ipAddress.equals(sourcePacketAddress.getHostAddress())) {
-//                            ip = InetAddress.getByName(entry.nextHop);
-//                        }
-//                    }
-//                    DatagramPacket ackPacket = new DatagramPacket(finAckCustomPacketBytes, finAckCustomPacketBytes.length, ip, 8432);
-//                    sendSocket.send(ackPacket);
 
                     break;
                 }
